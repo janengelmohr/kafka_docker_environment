@@ -1,0 +1,45 @@
+version: "3"
+services:
+  kafka:
+    image: 'bitnami/kafka:latest'
+    ports:
+      - '9092:9092'
+    volumes:
+      - /Users/janengelmohr/Dev/kafka_local:/bitnami/kafka
+    environment:
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+  kafka-ui:
+      container_name: kafka-ui
+      image: provectuslabs/kafka-ui:v0.7.1
+      ports:
+        - 8080:8080
+      environment:
+        KAFKA_CLUSTERS_0_NAME: DEV
+        KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+        KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://karapace:8081
+  karapace-registry:
+    image: ghcr.io/aiven/karapace:latest
+    container_name: karapace
+    entrypoint:
+      - /bin/bash
+      - /opt/karapace/start.sh
+      - registry
+    ports:
+      - "8081:8081"
+    environment:
+      KARAPACE_ADVERTISED_HOSTNAME: karapace-registry
+      KARAPACE_BOOTSTRAP_URI: kafka:9092
+      KARAPACE_PORT: 8081
+      KARAPACE_HOST: 0.0.0.0
+      KARAPACE_CLIENT_ID: internal.karapace
+      KARAPACE_GROUP_ID: internal.karapace-registry
+      KARAPACE_MASTER_ELIGIBILITY: "true"
+      KARAPACE_TOPIC_NAME: _schemas
+      KARAPACE_LOG_LEVEL: WARNING
+      KARAPACE_COMPATIBILITY: FULL
+      KARAPACE_SECURITY_PROTOCOL: PLAINTEXT
